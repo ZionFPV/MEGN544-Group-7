@@ -211,3 +211,55 @@ def multiplyQuat(Q_left: np.ndarray, Q_right: np.ndarray) -> np.ndarray:
     q_out[0] = q_out0
     q_out[1:,[0]] = q_im
     return q_out
+
+def pq2DualQuat(pos: np.ndarray, quat: np.ndarray) -> np.ndarray:
+    tol = 1e-6
+    Q = np.zeros([8,1]) # Flatten array
+    t = pos.reshape(-1,1); H = quat.reshape(-1,1)
+    T = np.zeros([4,1]); T[1:4] = t[:]
+    sin_half_th = np.linalg.norm(H[1:4])
+    if np.linalg.norm(t) < tol: # No translation case
+        Q[0:4] = H
+    elif sin_half_th < tol: # No rotation case
+        Q[0:4] = np.array([[1],[0],[0],[0]]) # Unit Quaternion
+        Q[5:] = t/2.0 # Zero real part
+    else: # General case
+        Q[0:4] = H
+        Q[4:] = multiplyQuat(T,H)/2.0
+    return Q
+
+def dualQuat2PQ(dual_quat: np.ndarray) -> np.ndarray:
+    dual_quat = dual_quat.reshape(-1,1)
+    P = dual_quat[0:4].copy()
+    Q = dual_quat[4:]
+    quat = P.copy()
+    pConj = P.copy(); pConj[1:] = -pConj[1:]
+    T = 2*multiplyQuat(Q,pConj)
+    pos = T[1:4]
+    pq = np.zeros([7,1])
+    pq[0:3] = pos; pq[3:] = quat
+    return pq
+
+def multiplyDualQuat(dq_left: np.ndarray, dq_right: np.ndarray) -> np.ndarray:
+    dq_left = dq_left.reshape(-1,1); dq_right = dq_right.reshape(-1,1)
+    P_left = dq_left[0:4]; P_right = dq_right[0:4] # rotation quats
+    Q_left = dq_left[4:]; Q_right = dq_right[4:]
+    rot = multiplyQuat(P_left,P_right)
+    disp = multiplyQuat(P_left,Q_right) + multiplyQuat(Q_left,P_right)
+    dual_quat = np.zeros([8,1])
+    dual_quat[0:4] = rot
+    dual_quat[4:] = disp
+    return dual_quat
+
+def dhTransform(a: float, d: float, alpha: float, theta: float) -> np.ndarray:
+    # Initialize all 4 4x4 terms
+    term1 = np.eye(4); term2 = np.eye(4)
+    term3 = np.eye(4); term4 = np.eye(4)
+    # Insert appropriate translation or rotation into blank 4x4 term
+    term1[0:3,[3]] = np.array([[0],[0],[d]])
+    term2[0:3,0:3] = rotZ(theta)
+    term3[0:3,[3]] = np.array([[a],[0],[0]],ndmin=2)
+    term4[0:3,0:3] = rotX(alpha)
+    # Combine all terms
+    H = term1 @ term2 @ term3 @ term4
+    return H
