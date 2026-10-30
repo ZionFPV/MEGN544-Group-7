@@ -73,6 +73,53 @@ pq_check = np.array([[-0.2165],[0.5657],[0.4528],[0.6543]])
 pq_ans = ro.multiplyQuat(q_in,p_in)
 print("Check multiplyQuat:")
 print(np.max(np.abs(pq_check-pq_ans)))
+print("")
 
-# TODO: Write and check dual quaternion functions
-# TODO: Write and check dhTransform function
+# Test dual quaternion functions
+pos = np.array([[-0.2484],[0.4124],[0.9332]])
+quat = np.array([[0.5905],[0.4038],[0.6107],[-0.3395]])
+dpdq_check = np.array(
+    [[0.5905],[0.4038],[0.6107],[-0.3395],
+     [0.0827],[-0.4283],[0.2680],[0.1165]]
+)
+dpdq_ans = ro.pq2DualQuat(pos,quat)
+print("Check pq2DualQuat:")
+print(np.max(np.abs(dpdq_check-dpdq_ans)))
+dqdp = np.array(
+    [[-0.8036],[0.5495],[-0.0876],[-0.2114],
+     [-0.7960],[-0.9497],[-0.5308],[0.7773]]
+)
+pq_check = np.array(
+    [[2.0405],[0.2609],[-2.3353],
+     [-0.8036],[0.5495],[-0.0876],[-0.2114]]
+)
+pq_ans = ro.dualQuat2PQ(dqdp)
+print("Check dualQuat2PQ:")
+print(np.max(np.abs(pq_check-pq_ans)))
+dq_left = np.array(
+    [[-0.6378],[-0.4730],[-0.6054],[-0.0543],
+     [0.0857],[-0.3596],[0.1652],[0.2838]]
+)
+dq_right = np.array(
+    [[-0.6686],[-0.6297],[-0.3909],[-0.0604],
+     [-0.3453],[0.8970],[-0.9925],[0.8943]]
+)
+dq_check = np.array(
+    [[-0.1114],[0.7332],[0.6597],[-0.1215],
+     [-0.1098],[-0.7166],[0.8720],[0.5106]]
+)
+dq_ans = ro.multiplyDualQuat(dq_left,dq_right)
+print("Check multiplyDualQuat:")
+print(np.max(np.abs(dq_check-dq_ans)))
+print("")
+
+# Check dhTransform
+dh_check = np.array(
+    [[-0.8841, -0.1785, -0.4318, -1.4545],
+     [0.4673,-0.3378,-0.8171,0.7688],
+     [0, -0.9242, 0.3820,-1.3827],
+     [0,0,0,1]]
+)
+dh_ans = ro.dhTransform(1.6452,-1.3827,-1.1788,2.6554)
+print("Check dhTransform:")
+print(np.max(np.abs(dh_check-dh_ans)))
